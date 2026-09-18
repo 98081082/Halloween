@@ -1,5 +1,22 @@
 # Halloween decoration
 
+## Photo to speaker
+
+From `/home/pi/halloween/Halloween`, run:
+
+```sh
+/home/pi/halloween/.venv/bin/python main.py /home/pi/halloween/test-images/witch-costume.jpg
+```
+
+This loads Piper, sends the photo to Ollama, prints the generated phrase, and
+plays it through the headphone output using the zombie/monster effect.
+Options: `--style normal`, `--device ALSA_DEVICE`, `--voice MODEL.onnx`,
+`--url http://HOST:11434`, `--model MODEL`, and `--timeout SECONDS`.
+The existing speech implementation is reused, so voice adjustments apply to both
+interactive speech and photo playback. Emoji are removed before synthesis.
+The input photo is preserved; generated audio is temporary. Failures exit nonzero.
+Timing includes voice loading, Ollama, synthesis/playback, and the full run.
+
 ## Ollama gateway
 
 On the Pi, from `/home/pi/halloween/Halloween`:
@@ -31,7 +48,7 @@ Phrase text goes to stdout; timings go to stderr. `--json` combines both.
 Timings include image preparation, request wall time, and Ollama model load,
 prompt evaluation and generation times when provided by the server.
 Errors exit nonzero rather than passing an error message to the speaker.
-Speech playback remains a separate step; see `text to speech/README.md`.
+Use `main.py` for combined playback, or `text to speech/README.md` for interactive speech.
 
 API references: [chat](https://docs.ollama.com/api/chat),
 [vision image encoding](https://docs.ollama.com/capabilities/vision).
