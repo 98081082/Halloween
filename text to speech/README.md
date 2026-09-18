@@ -1,9 +1,10 @@
 # Halloween speech
 
-The default `--style monster` lowers pitch by about 8.8 semitones, slows
-playback to 60% speed, and adds a raspy zombie growl and 90 ms echo.
+The default `--style monster` lowers pitch by about 8.8 semitones while preserving
+the natural speaking pace, and adds a raspy zombie growl and 90 ms echo.
 Blended soft saturation adds rasp, with 31 Hz and 67 Hz modulation for roughness.
-The effect uses Python's standard library with headroom to avoid clipping.
+SoX shifts pitch independently of duration; Python adds rasp with headroom.
+Install the system dependency with `sudo apt-get install sox`.
 Use `--style normal` for the original Piper voice.
 
 Interactive offline text-to-speech using Piper on the Raspberry Pi.

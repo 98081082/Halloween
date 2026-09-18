@@ -13,12 +13,20 @@ import wave
 
 
 def monster_effect(source: Path, target: Path) -> None:
-    """Lower pitch and add a raspy zombie growl and short echo to Piper PCM."""
-    with wave.open(str(source), "rb") as wav_file:
-        if wav_file.getsampwidth() != 2 or wav_file.getnchannels() != 1:
-            raise ValueError("Monster effect requires mono 16-bit PCM")
-        rate = round(wav_file.getframerate() * 0.60)
-        samples = array("h", wav_file.readframes(wav_file.getnframes()))
+    """Lower pitch without slowing speech, then add rasp and a short echo."""
+    if shutil.which("sox") is None:
+        raise RuntimeError("Monster voice requires SoX: sudo apt-get install sox")
+    with tempfile.TemporaryDirectory(prefix="halloween-pitch-") as directory:
+        shifted = Path(directory) / "shifted.wav"
+        subprocess.run(
+            ["sox", str(source), "-b", "16", str(shifted), "pitch", "-884.36"],
+            check=True, timeout=30,
+        )
+        with wave.open(str(shifted), "rb") as wav_file:
+            if wav_file.getsampwidth() != 2 or wav_file.getnchannels() != 1:
+                raise ValueError("Monster effect requires mono 16-bit PCM")
+            rate = wav_file.getframerate()
+            samples = array("h", wav_file.readframes(wav_file.getnframes()))
     if sys.byteorder != "little":
         samples.byteswap()
     delay = round(rate * 0.09)

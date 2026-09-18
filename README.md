@@ -10,6 +10,7 @@ From `/home/pi/halloween/Halloween`, run:
 
 This loads Piper, sends the photo to Ollama, prints the generated phrase, and
 plays it through the headphone output using the zombie/monster effect.
+Install `sox` with `sudo apt-get install sox` for deep pitch at normal speaking speed.
 Options: `--style normal`, `--device ALSA_DEVICE`, `--voice MODEL.onnx`,
 `--url http://HOST:11434`, `--model MODEL`, and `--timeout SECONDS`.
 The existing speech implementation is reused, so voice adjustments apply to both
