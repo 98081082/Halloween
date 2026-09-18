@@ -13,11 +13,11 @@ import wave
 
 
 def monster_effect(source: Path, target: Path) -> None:
-    """Lower pitch and add a restrained growl and short echo to Piper PCM."""
+    """Lower pitch and add a raspy zombie growl and short echo to Piper PCM."""
     with wave.open(str(source), "rb") as wav_file:
         if wav_file.getsampwidth() != 2 or wav_file.getnchannels() != 1:
             raise ValueError("Monster effect requires mono 16-bit PCM")
-        rate = round(wav_file.getframerate() * 0.72)
+        rate = round(wav_file.getframerate() * 0.60)
         samples = array("h", wav_file.readframes(wav_file.getnframes()))
     if sys.byteorder != "little":
         samples.byteswap()
@@ -25,9 +25,14 @@ def monster_effect(source: Path, target: Path) -> None:
     output = array("h")
     for i in range(len(samples) + delay):
         dry = samples[i] if i < len(samples) else 0
-        growl = 0.85 + 0.15 * math.sin(2 * math.pi * 35 * i / rate)
+        # Blend saturated harmonics with dry speech to retain intelligibility.
+        normalized = dry / 32768.0
+        rasp = math.tanh(3.5 * normalized) / math.tanh(3.5)
+        textured = 32768.0 * (0.65 * normalized + 0.35 * rasp)
+        growl = (0.78 + 0.16 * math.sin(2 * math.pi * 31 * i / rate)
+                 + 0.06 * math.sin(2 * math.pi * 67 * i / rate))
         echo = samples[i - delay] * 0.18 if delay <= i < len(samples) + delay else 0
-        output.append(round((dry * growl + echo) * 0.8))
+        output.append(round((textured * growl + echo) * 0.8))
     if sys.byteorder != "little":
         output.byteswap()
     with wave.open(str(target), "wb") as wav_file:
