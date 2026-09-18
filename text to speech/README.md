@@ -1,5 +1,10 @@
 # Halloween speech
 
+The default `--style monster` lowers pitch by about 5.7 semitones, slows
+playback to 72% speed, and adds a subtle 35 Hz growl and 90 ms echo.
+The effect uses Python's standard library with headroom to avoid clipping.
+Use `--style normal` for the original Piper voice.
+
 Interactive offline text-to-speech using Piper on the Raspberry Pi.
 The voice is loaded once and reused. Generated audio is temporary and deleted
 after playback. Timing is printed for synthesis and the complete interaction.

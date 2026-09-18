@@ -1,6 +1,8 @@
 """Interactive, offline Piper speech for the Raspberry Pi."""
 
 import argparse
+from array import array
+import math
 from pathlib import Path
 import shutil
 import subprocess
@@ -10,13 +12,42 @@ import time
 import wave
 
 
-def speak(voice, text: str, device: str) -> None:
+def monster_effect(source: Path, target: Path) -> None:
+    """Lower pitch and add a restrained growl and short echo to Piper PCM."""
+    with wave.open(str(source), "rb") as wav_file:
+        if wav_file.getsampwidth() != 2 or wav_file.getnchannels() != 1:
+            raise ValueError("Monster effect requires mono 16-bit PCM")
+        rate = round(wav_file.getframerate() * 0.72)
+        samples = array("h", wav_file.readframes(wav_file.getnframes()))
+    if sys.byteorder != "little":
+        samples.byteswap()
+    delay = round(rate * 0.09)
+    output = array("h")
+    for i in range(len(samples) + delay):
+        dry = samples[i] if i < len(samples) else 0
+        growl = 0.85 + 0.15 * math.sin(2 * math.pi * 35 * i / rate)
+        echo = samples[i - delay] * 0.18 if delay <= i < len(samples) + delay else 0
+        output.append(round((dry * growl + echo) * 0.8))
+    if sys.byteorder != "little":
+        output.byteswap()
+    with wave.open(str(target), "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(rate)
+        wav_file.writeframes(output.tobytes())
+
+
+def speak(voice, text: str, device: str, style: str = "monster") -> None:
     """Generate a temporary WAV, play it, and remove it even on failure."""
     started = time.perf_counter()
     with tempfile.TemporaryDirectory(prefix="halloween-speech-") as directory:
         wav_path = Path(directory) / "speech.wav"
         with wave.open(str(wav_path), "wb") as wav_file:
             voice.synthesize_wav(text, wav_file)
+        if style == "monster":
+            monster_path = Path(directory) / "monster.wav"
+            monster_effect(wav_path, monster_path)
+            wav_path = monster_path
         generated = time.perf_counter()
         with wave.open(str(wav_path), "rb") as wav_file:
             duration = wav_file.getnframes() / wav_file.getframerate()
@@ -37,6 +68,8 @@ def main() -> int:
         help="Piper ONNX voice file (its .onnx.json file must be alongside it)",
     )
     parser.add_argument("--device", default="default", help="ALSA playback device; see aplay -L")
+    parser.add_argument("--style", choices=("monster", "normal"), default="monster",
+                        help="Voice effect (default: monster)")
     args = parser.parse_args()
     if not args.model.is_file() or not Path(str(args.model) + ".json").is_file():
         print(f"Voice model or configuration missing: {args.model}", file=sys.stderr)
@@ -67,7 +100,7 @@ def main() -> int:
         if not text:
             continue
         try:
-            speak(voice, text, args.device)
+            speak(voice, text, args.device, args.style)
         except subprocess.TimeoutExpired:
             print("Audio playback timed out. Check the output device.", file=sys.stderr)
         except subprocess.CalledProcessError:
